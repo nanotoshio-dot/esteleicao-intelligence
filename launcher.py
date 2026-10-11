@@ -10,7 +10,11 @@ from streamlit.web import cli as stcli
 HOST = "127.0.0.1"
 PORT = 8501
 URL = f"http://{HOST}:{PORT}"
+def get_app_dir():
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        return Path(sys._MEIPASS)
 
+    return Path(__file__).resolve().parent
 
 def abrir_navegador():
     """Abre o dashboard após o servidor local iniciar."""
@@ -19,7 +23,7 @@ def abrir_navegador():
 
 
 def main():
-    base_dir = Path(__file__).resolve().parent
+    base_dir = get_app_dir()
     app_file = base_dir / "dashboard.py"
 
     if not app_file.exists():
