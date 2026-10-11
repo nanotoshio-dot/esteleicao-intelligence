@@ -1,3 +1,4 @@
+import os
 import sys
 import threading
 import time
@@ -5,17 +6,25 @@ import webbrowser
 from pathlib import Path
 
 
+# Streamlit precisa rodar em modo de produção dentro do EXE.
+# Definimos isto antes de importar o Streamlit.
+os.environ["STREAMLIT_GLOBAL_DEVELOPMENT_MODE"] = "false"
+os.environ["STREAMLIT_BROWSER_GATHER_USAGE_STATS"] = "false"
+
 from streamlit.web import cli as stcli
 
 
 HOST = "127.0.0.1"
 PORT = 8501
 URL = f"http://{HOST}:{PORT}"
+
+
 def get_app_dir():
     if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
         return Path(sys._MEIPASS)
 
     return Path(__file__).resolve().parent
+
 
 def abrir_navegador():
     """Abre o dashboard após o servidor local iniciar."""
@@ -34,19 +43,26 @@ def main():
 
     threading.Thread(
         target=abrir_navegador,
-        daemon=True
+        daemon=True,
     ).start()
 
     sys.argv = [
         "streamlit",
         "run",
         str(app_file),
+
+        "--global.developmentMode",
+        "false",
+
         "--server.address",
         HOST,
+
         "--server.port",
         str(PORT),
+
         "--server.headless",
         "true",
+
         "--browser.gatherUsageStats",
         "false",
     ]
