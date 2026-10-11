@@ -1,0 +1,20 @@
+# Bloco do painel esteleicao, importado pelo Caddyfile principal
+# (C:\Git\veracibot\deploy\windows\Caddyfile) com a linha:
+#   import C:/git/esteleicao/deploy/Caddyfile.est
+#
+# O painel (Streamlit) roda como servico "esteleicao" no NSSM, ouvindo SO
+# internamente em 127.0.0.1:8503 (instalado por deploy\instalar_servico_windows.ps1).
+# O Caddy publica em esteleicao.com nas portas padrao, com HTTPS automatico
+# (quem acessar http://esteleicao.com e redirecionado para https).
+# O reverse_proxy do Caddy ja repassa WebSocket, que o Streamlit usa.
+#
+# AJUSTE a porta abaixo se instalar o servico com outra (-Porta).
+
+esteleicao.com {
+	encode gzip
+	reverse_proxy 127.0.0.1:8503
+}
+
+www.esteleicao.com {
+	redir https://esteleicao.com{uri} permanent
+}
