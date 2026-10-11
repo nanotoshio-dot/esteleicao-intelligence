@@ -1,8 +1,41 @@
+# Dados eleitorais
 dados/
+logs/
+_amostra/
+
+# Python
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
 .venv/
-.DS_Store
-_amostra/
-logs/
+venv/
+
+# Builds
+build/
+dist/
+*.spec
+
+# Instaladores
+installer/output/
+output/
 pacote_servidor.zip
+
+# Arquivos de dados grandes
+*.parquet
+*.zip
+*.7z
+*.jez
+*.logjez
+*.dat
+
+# IDE
+.vscode/
+.idea/
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
