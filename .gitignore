@@ -1,0 +1,8 @@
+dados/
+__pycache__/
+*.pyc
+.venv/
+.DS_Store
+_amostra/
+logs/
+pacote_servidor.zip
