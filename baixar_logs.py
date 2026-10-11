@@ -33,6 +33,7 @@ import zipfile
 from collections import Counter, defaultdict
 from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, as_completed, wait
 from pathlib import Path
+from paths import DATA_DIR
 
 import numpy as np
 import pandas as pd
@@ -43,7 +44,7 @@ URL = ("https://cdn.tse.jus.br/estatistica/sead/eleicoes/eleicoes{ano}/arqurnato
        "bu_imgbu_logjez_rdv_vscmr_{ano}_{turno}t_{uf}.zip")
 UFS = ["AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO", "MA", "MG", "MS", "MT", "PA",
        "PB", "PE", "PI", "PR", "RJ", "RN", "RO", "RR", "RS", "SC", "SE", "SP", "TO", "ZZ"]
-PASTA = Path(__file__).parent / "dados"
+PASTA = DATA_DIR
 
 
 # ------------------------------------------------------------------ leitura do zip
