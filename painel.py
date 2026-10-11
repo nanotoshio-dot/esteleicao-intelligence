@@ -5,6 +5,7 @@ Painel de abstenção e horário de votação por seção eleitoral.
 from __future__ import annotations
 
 from pathlib import Path
+from paths import DATA_DIR
 
 import numpy as np
 import pandas as pd
@@ -16,7 +17,7 @@ from analise import (juntar_horario, limites_funil, perfil_horario, pontuar_seco
                      resumo_coluna, votos_por_hora)
 
 st.set_page_config(page_title="Abstenção por seção", page_icon="🗳️", layout="wide")
-PASTA = Path(__file__).parent / "dados"
+PASTA = DATA_DIR
 COR_ALTA, COR_BAIXA, COR_NORMAL = "#d6453d", "#2f6fb5", "#9aa4b1"
 TODOS = "— Todos —"
 
