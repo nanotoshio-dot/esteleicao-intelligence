@@ -16,12 +16,13 @@ import io
 import sys
 import zipfile
 from pathlib import Path
+from paths import DATA_DIR
 
 import pandas as pd
 import requests
 
 URL = "https://cdn.tse.jus.br/estatistica/sead/odsele/detalhe_votacao_secao/detalhe_votacao_secao_{ano}.zip"
-PASTA = Path(__file__).parent / "dados"
+PASTA = DATA_DIR
 
 # Colunas que usamos. As marcadas como opcionais podem não existir em todos os anos.
 OBRIGATORIAS = ["NR_TURNO", "SG_UF", "CD_MUNICIPIO", "NM_MUNICIPIO", "NR_ZONA", "NR_SECAO",
