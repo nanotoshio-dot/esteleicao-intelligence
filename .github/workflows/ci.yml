@@ -36,3 +36,40 @@ jobs:
       - name: Check application helpers
         run: |
           python -c "import version, paths; print('Version:', version.__version__); print('Data dir:', paths.DATA_DIR)"
+      - name: Smoke test dashboard
+        shell: powershell
+        run: |
+          $process = Start-Process python `
+            -ArgumentList "-m","streamlit","run","dashboard.py","--server.headless=true","--server.address=127.0.0.1","--server.port=8501" `
+            -PassThru
+
+          try {
+            $ok = $false
+
+            for ($i = 0; $i -lt 30; $i++) {
+              Start-Sleep -Seconds 1
+
+              try {
+                $response = Invoke-WebRequest `
+                  -Uri "http://127.0.0.1:8501/_stcore/health" `
+                  -UseBasicParsing `
+                  -TimeoutSec 2
+
+                if ($response.StatusCode -eq 200) {
+                  $ok = $true
+                  break
+                }
+              }
+              catch {
+              }
+            }
+
+            if (-not $ok) {
+              throw "Dashboard did not become healthy."
+            }
+
+            Write-Host "Dashboard smoke test OK"
+          }
+          finally {
+            Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+          }
