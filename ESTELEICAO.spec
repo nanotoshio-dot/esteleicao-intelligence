@@ -9,6 +9,7 @@ streamlit_datas, streamlit_binaries, streamlit_hiddenimports = collect_all(
 
 datas = [
     ("dashboard.py", "."),
+    ("painel.py", "."),
     ("VERSION", "."),
 ]
 
@@ -16,6 +17,13 @@ datas += streamlit_datas
 
 hiddenimports = [
     "data_service",
+    "analytics_view",
+    "data_manager",
+    "data_install",
+    "signals",
+    "baixar_dados",
+    "baixar_logs",
+    "download_tse",
     "analise",
     "paths",
     "version",

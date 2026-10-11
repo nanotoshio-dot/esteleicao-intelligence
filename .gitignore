@@ -39,3 +39,9 @@ Thumbs.db
 
 # Logs
 *.log
+test-results.txt
+build-results.txt
+installer-results.txt
+compile-results.txt
+!ESTELEICAO.spec
+.tools/

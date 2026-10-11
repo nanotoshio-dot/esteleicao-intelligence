@@ -31,7 +31,7 @@ OPCIONAIS = ["NR_LOCAL_VOTACAO", "NM_LOCAL_VOTACAO", "DS_LOCAL_VOTACAO_ENDERECO"
              "ST_VOTO_EM_TRANSITO", "QT_VOTOS_BRANCOS", "QT_VOTOS_NULOS"]
 
 
-def baixar(ano: int) -> Path:
+def baixar(ano: int, progresso=None) -> Path:
     PASTA.mkdir(exist_ok=True)
     destino = PASTA / f"detalhe_votacao_secao_{ano}.zip"
     if destino.exists() and destino.stat().st_size > 0:
@@ -49,6 +49,8 @@ def baixar(ano: int) -> Path:
             for bloco in r.iter_content(chunk_size=1 << 20):
                 f.write(bloco)
                 feito += len(bloco)
+                if progresso:
+                    progresso(feito, total)
                 if total:
                     print(f"\r  {feito / 1e6:,.0f} / {total / 1e6:,.0f} MB", end="", flush=True)
     print()
@@ -83,7 +85,7 @@ def ler_zip(caminho_zip: Path, turno: int, cargo: int) -> pd.DataFrame:
                         partes.append(pedaco)
             print(f"  ok {nome}")
     if not partes:
-        sys.exit(f"Nenhuma linha encontrada para turno={turno}, cargo={cargo}. "
+        raise ValueError(f"Nenhuma linha encontrada para turno={turno}, cargo={cargo}. "
                  "O turno já foi publicado pelo TSE?")
     return pd.concat(partes, ignore_index=True)
 
@@ -127,7 +129,10 @@ def main():
     a = p.parse_args()
 
     caminho = a.zip or baixar(a.ano)
-    df = limpar(ler_zip(caminho, a.turno, a.cargo))
+    try:
+        df = limpar(ler_zip(caminho, a.turno, a.cargo))
+    except ValueError as exc:
+        p.exit(1, f"{exc}\n")
     saida = PASTA / f"secoes_{a.ano}_t{a.turno}.parquet"
     PASTA.mkdir(exist_ok=True)
     df.to_parquet(saida, index=False)

@@ -10,6 +10,17 @@ on:
       - "launcher.py"
       - "dashboard.py"
       - "data_service.py"
+      - "analytics_view.py"
+      - "data_manager.py"
+      - "data_install.py"
+      - "signals.py"
+      - "painel.py"
+      - "baixar_dados.py"
+      - "baixar_logs.py"
+      - "download_tse.py"
+      - "logs_urna.py"
+      - "installer/**"
+      - "tests/**"
       - "analise.py"
       - "paths.py"
       - "version.py"
@@ -45,19 +56,39 @@ jobs:
         run: |
           pyinstaller ESTELEICAO.spec --noconfirm --clean
 
-      - name: Verify executable
+      - name: Test application
+        run: python -m unittest discover -s tests -v
+
+      - name: Smoke test packaged executable
+        shell: powershell
+        run: ./tests/smoke.ps1 -Packaged
+
+      - name: Install Inno Setup
         shell: powershell
         run: |
-          if (-not (Test-Path "dist\ESTELEICAO\ESTELEICAO.exe")) {
-              throw "ESTELEICAO.exe was not created."
-          }
+          Invoke-WebRequest 'https://github.com/jrsoftware/issrc/releases/download/is-6_7_3/innosetup-6.7.3.exe' -OutFile "$env:TEMP\innosetup.exe"
+          if ((Get-AuthenticodeSignature "$env:TEMP\innosetup.exe").Status -ne 'Valid') { throw 'Invalid compiler signature' }
+          $p = Start-Process "$env:TEMP\innosetup.exe" -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/CURRENTUSER',"/DIR=$env:RUNNER_TEMP\InnoSetup" -WindowStyle Hidden -PassThru -Wait
+          if ($p.ExitCode -ne 0) { throw 'Compiler installation failed' }
 
-          Write-Host "ESTELEICAO.exe created successfully."
+      - name: Compile installer
+        shell: powershell
+        run: |
+          $version = (Get-Content VERSION -Raw).Trim()
+          & "$env:RUNNER_TEMP\InnoSetup\ISCC.exe" "/DAppVersion=$version" installer/ESTELEICAO.iss
+          if ($LASTEXITCODE -ne 0) { throw "Installer compilation failed" }
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: ESTELEICAO-Windows-Installer
+          path: installer/output/ESTELEICAO-Setup-*.exe
+          if-no-files-found: error
 
       - name: Upload Windows build
         uses: actions/upload-artifact@v4
         with:
-          name: ESTELEICAO-Windows
+          name: ESTELEICAO-Windows-Portable
           path: dist/ESTELEICAO/
           if-no-files-found: error
           retention-days: 14

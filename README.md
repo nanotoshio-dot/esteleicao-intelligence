@@ -8,7 +8,46 @@ município → zona → seção. Sinaliza seções com abstenção fora do padr�
 concentrada no fim do dia, muitos eleitores liberados sem digital e,
 principalmente, essas coisas acontecendo juntas.
 
-## Como usar
+## Windows — ESTELEIÇÃO Intelligence
+
+No GitHub Actions, o workflow **Build Windows** gera os artefatos
+`ESTELEICAO-Windows-Installer` e `ESTELEICAO-Windows-Portable`. O instalador
+`ESTELEICAO-Setup-<VERSION>.exe` instala por usuário e cria atalho no Menu Iniciar.
+Não é necessário instalar Python. O navegador abre quando o servidor local estiver pronto.
+
+Em **📥 Dados**, escolha ano, turno e cargo (Presidente/Governador para eleições
+gerais; Prefeito para municipais), baixe as seções e use **Atualizar lista / recarregar dados**.
+Os logs são opcionais e baixados por UF, com retomada quando suportada pelo TSE.
+Uma base existente nunca é substituída pelo gerenciador. A publicação dos arquivos
+depende do TSE; eleições ainda não publicadas apresentam erro, sem valores simulados.
+
+Em **📊 Análises**, estão as comparações, distribuições, funil, sinalizadas,
+horários, biometria e cruzamentos do painel original. Os filtros da barra lateral
+permitem Brasil → UF → município → zona → seção. Limites e métodos permanecem ajustáveis.
+Mapa, resultados por candidato e histórico não aparecem enquanto não houver suporte próprio.
+
+Dados ficam em `%LOCALAPPDATA%\ESTELEICAO\dados`, cache em `cache` e diagnósticos
+em `logs\startup.log`. Atualizar ou desinstalar preserva esses dados.
+Fechar o navegador não encerra o servidor; encerre `ESTELEICAO.exe` no Gerenciador
+de Tarefas quando necessário. O serviço usa exclusivamente `127.0.0.1` e escolhe
+outra porta local quando 8501 está ocupada.
+
+Para desenvolver e validar (Python 3.12):
+
+```powershell
+python -m pip install -r requirements.txt -r requirements-build.txt
+python -m unittest discover -s tests -v
+python -m compileall .
+python -m PyInstaller ESTELEICAO.spec --noconfirm
+./tests/smoke.ps1 -Packaged
+ISCC.exe /DAppVersion=0.1.0 installer/ESTELEICAO.iss
+```
+
+Use o conteúdo de `VERSION` no parâmetro `AppVersion`. O workflow executa os testes
+e exige HTTP 200 do EXE antes de compilar e publicar o artefato do instalador.
+Os testes usam dados sintéticos isolados em uma pasta temporária, sem downloads do TSE.
+
+## Como usar por linha de comando
 
 Requer Python 3.9+. No macOS o comando é `python3` (se não existir, o sistema
 oferece instalar as "Command Line Tools"; aceite).

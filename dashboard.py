@@ -1,285 +1,55 @@
+"""Windows dashboard; analytical behavior is preserved in painel.py."""
+import logging
 import streamlit as st
-
 from data_service import carregar_eleicao, listar_eleicoes, resumo_eleicao
+from paths import CACHE_DIR, DATA_DIR, LOG_DIR
 from version import __version__
 
-
-st.set_page_config(
-    page_title="ESTELEIÇÃO Intelligence",
-    page_icon="🗳️",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
-
-
-st.markdown(
-    """
-    <style>
-        .block-container {
-            padding-top: 1.4rem;
-            padding-bottom: 2rem;
-        }
-
-        .est-title {
-            font-size: 2.2rem;
-            font-weight: 800;
-            margin-bottom: 0;
-        }
-
-        .est-subtitle {
-            color: #8b949e;
-            margin-top: 0.2rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .status-card {
-            border: 1px solid rgba(128,128,128,.25);
-            border-radius: 12px;
-            padding: 16px;
-            min-height: 110px;
-        }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
-
-# ---------------------------------------------------------
-# Dados disponíveis
-# ---------------------------------------------------------
-
-arquivos_eleicao = listar_eleicoes()
-
-arquivo_selecionado = None
-base = None
-resumo_atual = None
-
-
-# ---------------------------------------------------------
-# Sidebar
-# ---------------------------------------------------------
-
-with st.sidebar:
-    st.title("🗳️ ESTELEIÇÃO")
-    st.caption(f"Intelligence v{__version__}")
-
-    st.divider()
-
-    if arquivos_eleicao:
-        arquivo_selecionado = st.selectbox(
-            "Eleição / turno",
-            arquivos_eleicao,
-            format_func=lambda p: p.stem.replace("secoes_", "").upper(),
-        )
-
-        with st.spinner("Carregando dados eleitorais..."):
-            base = carregar_eleicao(arquivo_selecionado)
-            resumo_atual = resumo_eleicao(base)
-
+st.set_page_config(page_title="ESTELEIÇÃO Intelligence", page_icon="🗳️", layout="wide")
+st.title("ESTELEIÇÃO Intelligence")
+st.caption(f"Versão {__version__} · Fonte: Tribunal Superior Eleitoral")
+st.warning("Indicadores estatísticos não constituem, por si só, evidência de fraude.")
+pagina = st.sidebar.radio("Intelligence", ["🏠 Visão Geral", "📊 Análises", "📥 Dados", "⚙️ Configurações"])
+if pagina == "📥 Dados":
+    from data_manager import render
+    render()
+elif pagina == "⚙️ Configurações":
+    st.subheader("Armazenamento e diagnóstico")
+    for nome, pasta in [("Dados", DATA_DIR), ("Cache", CACHE_DIR), ("Logs", LOG_DIR)]:
+        st.text(f"{nome}: {pasta}")
+    st.info("Dados persistem entre atualizações e desinstalações. Logs de execução ficam na pasta acima.")
+    if st.button("Limpar cache e recarregar"):
+        st.cache_data.clear()
+        st.cache_resource.clear()
+        st.rerun()
+elif pagina == "📊 Análises":
+    if not listar_eleicoes():
+        st.info("Instale uma eleição em 📥 Dados para começar.")
     else:
-        st.warning("Nenhuma eleição instalada.")
-
-    st.divider()
-
-    pagina = st.radio(
-        "Navegação",
-        [
-            "🏠 Visão Geral",
-            "🗺️ Mapa Eleitoral",
-            "🗳️ Resultados",
-            "📊 Estatística",
-            "🚩 Anomalias",
-            "⏰ Horário dos votos",
-            "🖐️ Biometria",
-            "🔀 Cruzamento",
-            "🔎 Seção eleitoral",
-            "📈 Histórico",
-            "📥 Dados",
-            "⚙️ Configurações",
-        ],
-    )
-
-    st.divider()
-    st.caption("Fonte principal: Tribunal Superior Eleitoral")
-
-
-# ---------------------------------------------------------
-# Cabeçalho
-# ---------------------------------------------------------
-
-st.markdown(
-    '<p class="est-title">ESTELEIÇÃO Intelligence</p>',
-    unsafe_allow_html=True,
-)
-
-st.markdown(
-    '<p class="est-subtitle">'
-    'Plataforma de inteligência e análise estatística de dados eleitorais brasileiros.'
-    '</p>',
-    unsafe_allow_html=True,
-)
-
-
-# ---------------------------------------------------------
-# Visão Geral
-# ---------------------------------------------------------
-
-if pagina == "🏠 Visão Geral":
-    st.subheader("Visão Geral")
-
-    nome_eleicao = (
-        arquivo_selecionado.stem.replace("secoes_", "").upper()
-        if arquivo_selecionado
-        else "—"
-    )
-
-    c1, c2, c3, c4 = st.columns(4)
-
-    with c1:
-        st.metric(
-            "Eleição",
-            nome_eleicao,
-        )
-
-    with c2:
-        st.metric(
-            "Seções analisadas",
-            f"{resumo_atual['secoes']:,}".replace(",", ".")
-            if resumo_atual
-            else "—",
-        )
-
-    with c3:
-        st.metric(
-            "UFs com dados",
-            resumo_atual["ufs"]
-            if resumo_atual
-            else "—",
-        )
-
-    with c4:
-        st.metric(
-            "Abstenção",
-            f"{resumo_atual['taxa_abstencao']:.2%}"
-            if resumo_atual
-            else "—",
-        )
-
-    if resumo_atual:
-        st.divider()
-
-        k1, k2, k3 = st.columns(3)
-
-        with k1:
-            st.metric(
-                "Eleitores aptos",
-                f"{resumo_atual['aptos']:,}".replace(",", "."),
-            )
-
-        with k2:
-            st.metric(
-                "Municípios",
-                f"{resumo_atual['municipios']:,}".replace(",", "."),
-            )
-
-        with k3:
-            st.metric(
-                "Abstenções",
-                f"{resumo_atual['abstencoes']:,}".replace(",", "."),
-            )
-
-    st.divider()
-
-    dados_status = (
-        "🟢 Carregados"
-        if resumo_atual
-        else "🟡 Aguardando leitura"
-    )
-
-    logs_status = (
-        "🟢 Disponíveis"
-        if resumo_atual and resumo_atual["tem_logs"]
-        else "🟡 Não carregados"
-    )
-
-    s1, s2, s3, s4 = st.columns(4)
-
-    with s1:
-        st.markdown(
-            """
-            <div class="status-card">
-                <b>🧠 Motor estatístico</b><br><br>
-                🟢 Disponível
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    with s2:
-        st.markdown(
-            f"""
-            <div class="status-card">
-                <b>🗳️ Dados eleitorais</b><br><br>
-                {dados_status}
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    with s3:
-        st.markdown(
-            f"""
-            <div class="status-card">
-                <b>🧾 Logs de urna</b><br><br>
-                {logs_status}
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    with s4:
-        st.markdown(
-            """
-            <div class="status-card">
-                <b>🔍 Cruzamento</b><br><br>
-                🟢 Disponível
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    if resumo_atual:
-        st.success(
-            "Base eleitoral carregada com sucesso. "
-            "O ESTELEIÇÃO Intelligence já está lendo os dados reais."
-        )
-    else:
-        st.info(
-            "Nenhuma base eleitoral foi encontrada. "
-            "Quando os dados forem instalados, esta tela será preenchida automaticamente."
-        )
-
-
-# ---------------------------------------------------------
-# Demais módulos
-# ---------------------------------------------------------
-
+        from analytics_view import render
+        render()
 else:
-    st.subheader(pagina)
-
-    st.info(
-        "Módulo preparado. As funcionalidades existentes serão migradas para esta área "
-        "sem alterar o painel original."
-    )
-
-
-# ---------------------------------------------------------
-# Rodapé
-# ---------------------------------------------------------
-
-st.divider()
-
-st.caption(
-    "ESTELEIÇÃO Intelligence apresenta indicadores estatísticos e dados públicos. "
-    "Uma anomalia estatística não constitui, por si só, evidência de fraude."
-)
+    arquivos = listar_eleicoes()
+    if not arquivos:
+        st.info("Nenhuma eleição instalada. Abra 📥 Dados para baixar e processar dados oficiais do TSE.")
+    else:
+        arquivo = st.selectbox("Eleição / turno", arquivos, format_func=lambda p: p.stem.replace("secoes_", ""))
+        try:
+            with st.spinner("Carregando o motor estatístico…"):
+                base = carregar_eleicao(arquivo)
+                r = resumo_eleicao(base)
+        except (OSError, ValueError, KeyError) as exc:
+            logging.exception("Falha ao carregar %s", arquivo)
+            st.error(f"Não foi possível carregar {arquivo.name}: {exc}. Confira os dados em 📥 Dados.")
+        else:
+            campos = [("Seções", r["secoes"]), ("UFs", r["ufs"]), ("Municípios", r["municipios"]),
+                      ("Eleitores aptos", r["aptos"]), ("Abstenções", r["abstencoes"]),
+                      ("Abstenção agregada", f'{r["taxa_abstencao"]:.2%}'),
+                      ("Seções com log", r["secoes_com_log"]), ("Seções sinalizadas", r["sinalizadas"])]
+            for i in range(0, len(campos), 4):
+                for col, (nome, valor) in zip(st.columns(4), campos[i:i+4]):
+                    col.metric(nome, valor)
+            st.success("Motor estatístico: base carregada e pontuada.")
+            st.caption("Sinalização padrão: z ajustado ≤ −3 e ≥50 aptos; votação tardia ≥15% e ≥10 votos, "
+                       "destoando ≥30 minutos da escola quando disponível; liberação manual z≥3 e ≥5 casos. "
+                       "Em 📊 Análises você pode ajustar os limites e explorar cada seção.")

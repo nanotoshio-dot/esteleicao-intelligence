@@ -16,7 +16,8 @@ import streamlit as st
 from analise import (juntar_horario, limites_funil, perfil_horario, pontuar_secoes, resumo,
                      resumo_coluna, votos_por_hora)
 
-st.set_page_config(page_title="Abstenção por seção", page_icon="🗳️", layout="wide")
+if not globals().get("INTELLIGENCE_EMBEDDED", False):
+    st.set_page_config(page_title="Abstenção por seção", page_icon="🗳️", layout="wide")
 PASTA = DATA_DIR
 COR_ALTA, COR_BAIXA, COR_NORMAL = "#d6453d", "#2f6fb5", "#9aa4b1"
 TODOS = "— Todos —"
@@ -229,30 +230,9 @@ df = df.assign(z_abst_baixa=-df["z_ajustado"])
 df = df.assign(score_cruzado=calcular_score(df))
 NOME_CRUZ = " + ".join(c.lower() for c in criterios)
 
-def sinalizar(d: pd.DataFrame) -> pd.DataFrame:
-    """Marca os três critérios de interesse e conta quantos cada seção cumpre."""
-    f_abst = (d[medida] <= -limite) & (d["aptos"] >= min_aptos)
-    if "votos_apos_17" in d:
-        f_17 = (d["pct_apos_17"] >= lim_17) & (d["votos_apos_17"] >= 10)
-        if so_destoa and "dif_local_min" in d:
-            f_17 &= (d["dif_local_min"] >= 30) | d["dif_local_min"].isna()
-        f_17 = f_17.fillna(False).astype(bool)
-    else:
-        f_17 = pd.Series(False, index=d.index)
-    if "z_manual" in d:
-        f_man = ((d["z_manual"] >= limite) & (d["votos_manual"] >= 5)).fillna(False).astype(bool)
-    else:
-        f_man = pd.Series(False, index=d.index)
-    n = f_abst.astype(int) + f_17.astype(int) + f_man.astype(int)
-    rot = pd.Series("", index=d.index, dtype=object)
-    alguma = n > 0
-    if alguma.any():  # monta o texto só para as poucas seções que cumprem algum critério
-        partes = pd.concat([f_abst[alguma].map({True: "abstenção baixa", False: ""}),
-                            f_17[alguma].map({True: "voto após 17h", False: ""}),
-                            f_man[alguma].map({True: "liberação manual", False: ""})], axis=1)
-        rot[alguma] = partes.apply(lambda r: " · ".join(x for x in r if x), axis=1)
-    return d.assign(f_abst=f_abst, f_17=f_17, f_man=f_man, n_criterios=n, criterios_cumpridos=rot,
-                    alerta=np.where(n >= min_crit, "sinalizada", "normal"))
+def sinalizar(d):
+    from signals import sinalizar as aplicar
+    return aplicar(d, medida, limite, min_aptos, lim_17, so_destoa, min_crit)
 
 
 df = sinalizar(df)

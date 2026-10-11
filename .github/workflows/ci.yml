@@ -36,12 +36,14 @@ jobs:
       - name: Check application helpers
         run: |
           python -c "import version, paths; print('Version:', version.__version__); print('Data dir:', paths.DATA_DIR)"
+      - name: Unit and dashboard execution tests
+        run: python -m unittest discover -s tests -v
       - name: Smoke test dashboard
         shell: powershell
         run: |
           $process = Start-Process python `
             -ArgumentList "-m","streamlit","run","dashboard.py","--server.headless=true","--server.address=127.0.0.1","--server.port=8501" `
-            -PassThru
+            -WindowStyle Hidden -PassThru
 
           try {
             $ok = $false
