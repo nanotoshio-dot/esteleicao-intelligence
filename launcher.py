@@ -20,11 +20,11 @@ def abrir_navegador():
 
 def main():
     base_dir = Path(__file__).resolve().parent
-    painel = base_dir / "painel.py"
+    app_file = base_dir / "dashboard.py"
 
-    if not painel.exists():
+    if not app_file.exists():
         raise FileNotFoundError(
-            f"Arquivo do dashboard não encontrado: {painel}"
+            f"Dashboard não encontrado: {app_file}"
         )
 
     threading.Thread(
@@ -35,7 +35,7 @@ def main():
     sys.argv = [
         "streamlit",
         "run",
-        str(painel),
+        str(app_file),
         "--server.address",
         HOST,
         "--server.port",
